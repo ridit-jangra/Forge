@@ -76,40 +76,40 @@ def load_commit_data() -> list:
     return data
 
 def add_file(file: dict) -> None:
-    if os.path.exists(folder_path) == False:
+    if not os.path.exists(folder_path):
         print("Init a repo first.")
         return
 
-    file_entry = {"file_path": file.get("path"), "file_content": file.get("content"), "status": "new"}
     files_entries = load_file_data()
-    file_path = f"{folder_path}/files.json"
+    file_path = file.get("path")
+    content = file.get("content")
 
-    for i in files_entries:
-        if (
-            i.get("file_path") == file.get("path")
-        ):
-            try:
-                index = files_entries.index(i)
-                files_entries.pop(index)
-                content = ""
-                with open(i.get("file_path"), "w") as f:
-                    content = f.read()
+    # remove any previous entry for this file
+    files_entries = [f for f in files_entries if f.get("file_path") != file_path]
 
-                new_file_entry = {"file_path": i.get("file_path"), "file_content": content, "status": "modified"}
-                files_entries.append(new_file_entry)
-            except:
-                print("Error occured while removing previous file entry.")
-                return
-        
+    # determine status
+    status = "new"
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r") as f:
+                existing_content = f.read()
+            if existing_content != content:
+                status = "modified"
+        except:
+            pass
 
-    files_entries.append(file_entry)
+    files_entries.append({
+        "file_path": file_path,
+        "file_content": content,
+        "status": status
+    })
 
     try:
-        with open(file_path, "w") as f:
+        with open(f"{folder_path}/files.json", "w") as f:
             f.write(json.dumps(files_entries))
     except Exception as e:
-        print(f"Error occured: ${e}")
-        return
+        print(f"Error occured: {e}")
+
     
 def remove_file(entry_file_path: str) -> None:
     if os.path.exists(folder_path) == False:
@@ -121,7 +121,6 @@ def remove_file(entry_file_path: str) -> None:
 
     for i in files_entries:
         if i.get("file_path") == entry_file_path:
-            print("removing", i.get("file_path"))
             try:
                 index = files_entries.index(i)
                 files_entries.pop(index)
@@ -202,6 +201,38 @@ def get_commit(commit_id: str) -> dict:
         
     return target_commit_entry
 
+def add_all() -> None:
+    ignore_paths = [".forge"]
+    if os.path.exists(".forgeignore"):
+        with open(".forgeignore", "r") as f:
+            ignore_paths += [line.strip() for line in f if line.strip()]
+
+    current_commit = get_commit(get_current_commit())
+    tracked_files = {f.get("file_path"): f for f in current_commit.get("files")}
+
+    for root, dirs, files in os.walk("."):
+        dirs[:] = [d for d in dirs if os.path.join(root, d) not in ignore_paths and d not in ignore_paths]
+
+        existing_files = {os.path.join(root, f) for f in files}
+        
+        for file_path in list(tracked_files.keys()):
+            if file_path not in existing_files and ".forge" not in file_path:
+                remove_file(file_path)
+                print("Removing missing file:", file_path)
+                tracked_files.pop(file_path)
+
+        for file in files:
+            file_path = os.path.join(root, file)
+            if any(p in file_path for p in ignore_paths) and file != ".forgeignore":
+                continue
+            try:
+                with open(file_path, "r") as f:
+                    content = f.read()
+                add_file({"path": file_path, "content": content})
+                print("Tracking file:", file_path)
+            except Exception as e:
+                print(f"Error reading file: {e}")
+
 def checkout_commit(commit_id: str) -> None:
     commit = get_commit(commit_id)
     files = commit.get("files")
@@ -245,15 +276,18 @@ if __name__ == "__main__":
             print("Add a file name.")
             quit()
         file_path = sys.argv[2]
-        content = ""
-        try:
-            with open(f"./{file_path}", "r") as f:
-                content = f.read()
-            
-            add_file({"path": file_path, "content": content})
-        except Exception as e:
-            print(f"Error occured: ${e}")
-            quit()
+        if file_path == ".":
+            add_all()
+        else:
+            content = ""
+            try:
+                with open(f"./{file_path}", "r") as f:
+                    content = f.read()
+                
+                add_file({"path": file_path, "content": content})
+            except Exception as e:
+                print(f"Error occured: ${e}")
+                quit()
     elif command == "remove":
         if len(sys.argv) < 3:
             print("Add a file name.")
