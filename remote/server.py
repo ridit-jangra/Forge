@@ -52,6 +52,29 @@ def load_commit_data_by_id(repo_name: str, commit_id: str) -> dict:
 
     return data
 
+def get_current_commit_id(repo_name: str) -> str:
+    file_path = f"repos/{repo_name}/.forge/current_commit.txt"
+    commit_id = ""
+
+    try:
+        with open(file_path, "r") as f:
+            commit_id = f.read()
+    except Exception as e:
+        print(f"Error occured: ${e}")
+        return
+    
+    return commit_id
+
+def set_current_commit_id(repo_name: str, commit_id: str) -> None:
+    file_path = f"repos/{repo_name}/.forge/current_commit.txt"
+
+    try:
+        with open(file_path, "w") as f:
+            f.write(commit_id)
+    except Exception as e:
+        print(f"Error occured: ${e}")
+        return
+
 class RepoData(BaseModel):
     name: str
     path: str
@@ -70,6 +93,10 @@ class CommitData(BaseModel):
     message: str
     repo_name: str
     files: list
+
+class CurrentCommitData(BaseModel):
+    commit_id: str
+    repo_name: str
 
 class ResetFilesData(BaseModel):
     repo_name: str
@@ -130,6 +157,13 @@ def add_file(file: FileData):
         print(f"Error occured: {e}")
 
     return {"status": "ok", "path": path}
+
+
+@app.post("/repos/commits/set_current")
+def set_current_commit(current_commit: CurrentCommitData):
+    repo_name = current_commit.repo_name
+    commit_id = current_commit.commit_id
+    set_current_commit_id(repo_name, commit_id)
 
 @app.post("/repos/commits/add")
 def add_commit_remote(commit: CommitData):
@@ -197,10 +231,13 @@ def clone_repo(data: CloneData):
     if commits_path.exists():
         with open(commits_path, "r") as f:
             commits = json.load(f)
+    
+    current_commit_id =  get_current_commit_id(repo_name)
 
     return {
         "status": "ok",
         "repo_name": repo_name,
         "files": files,
-        "commits": commits
+        "commits": commits,
+        "current_commit_id":current_commit_id
     }

@@ -304,6 +304,10 @@ def push_changes() -> None:
         request = requests.post(f"{server_url}/repos/files/add", json=file_data)
         print(f"[Remote] (File Changes) {request.json()}")
 
+    current_commit_data = {"repo_name": get_repo_name(), "commit_id": get_current_commit()}
+    request = requests.post(f"{server_url}/repos/commits/set_current", json=current_commit_data)
+    print(f"[Remote] (Current Commit Changes) {request.json()}")
+
     push_data = {"repo_name": get_repo_name(), "commit_id": commit.get("id")}
     request = requests.post(f"{server_url}/repos/push", json=push_data)
     
@@ -330,26 +334,35 @@ def clone_repo(repo_name: str, dir_path: str = "") -> None:
     data = response.json()
     files = data["files"]
     commits = data["commits"]
+    current_commit = data["current_commit_id"]
 
-    if dir_path != "":
-        repo_name = dir_path
+    if dir_path == "":
+        dir_path = repo_name
 
     try:
-        os.mkdir(repo_name)
-        os.mkdir(f"{repo_name}/.forge")
+        os.mkdir(dir_path)
+        os.mkdir(f"{dir_path}/.forge")
+        repo_path = str(Path.cwd() / dir_path)
 
-        with open(f"{repo_name}/.forge/files.json", "w") as f:
+        with open(f"{dir_path}/.forge/files.json", "w") as f:
             f.write(json.dumps(files))
         
-        with open(f"{repo_name}/.forge/commits.json", "w") as f:
+        with open(f"{dir_path}/.forge/commits.json", "w") as f:
             f.write(json.dumps(commits))
 
+        with open(f"{dir_path}/.forge/current_commit.txt", "w") as f:
+            f.write(current_commit)
+
+        with open(f"{dir_path}/.forge/repo.json", "w") as f:
+            data = {"name": repo_name, "path": repo_path}
+            f.write(json.dumps(data))
+
         for file in files:
-            file_path = Path(f"{repo_name}") / file.get("file_path")
+            file_path = Path(f"{dir_path}") / file.get("file_path")
 
             file_path.parent.mkdir(parents=True, exist_ok=True)
 
-            content = file.get("content") or ""
+            content = file.get("file_content") or ""
             file_path.write_text(content)
 
             print(f"[Remote] (Fetching File) {file.get("file_path")}...")
@@ -407,7 +420,11 @@ if __name__ == "__main__":
             print("Add a commit id.")
             quit()
         commit_id = sys.argv[2]
-        checkout_commit(commit_id)
+        if commit_id == "-":
+            checkout_commit(get_current_commit())
+        else:
+            checkout_commit(commit_id)
+
     elif command == "list":
         if len(sys.argv) < 3:
             print("Add a thing to list eg: commits.")
@@ -433,7 +450,7 @@ if __name__ == "__main__":
             quit()
         clone_repo(repo_name)
     elif command == "help":
-        print("All commands: init, list, add, remove, push")
+        print("All commands: init, list, add, remove, push, clone")
     else:
-        print("Use a valid command: init, list, add, remove, push")
+        print("Use a valid command: init, list, add, remove, push, clone")
         quit()
