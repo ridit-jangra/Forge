@@ -7,7 +7,7 @@ from pathlib import Path
 
 folder_name = ".forge"
 folder_path = f"./{folder_name}"
-server_url = "https://forge.ridit.space:7420"
+server_url = "https://forge.ridit.space"
 
 def get_new_commit_id() -> str:
     return datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
