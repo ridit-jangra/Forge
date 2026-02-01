@@ -30,7 +30,54 @@ It allows you to track files, commit changes, push to a remote repository, clone
 
 ### Option 1: Python (Development)
 
-1. Clone the repository:
 ```bash
-git clone <repo-url>
+git clone https://github.com/ridit-jangra/Forge
 cd Forge
+pip install -r requirements.txt
+python forge.py <command>
+```
+
+---
+
+### Option 2: Executable (Recommended)
+
+```bash
+forge.exe <command>
+```
+
+No Python installation required.
+
+---
+
+## Configuration
+
+Optional `.env` file:
+
+```env
+FORGE_SERVER_URL=http://localhost:8000
+FORGE_SESSION=.forge_session
+```
+
+---
+
+## Usage
+
+```bash
+forge init
+forge add .
+forge commit "Initial commit"
+forge push
+```
+
+---
+
+## Limitations
+- Text files only
+- No branches or merges
+- Linear history
+- Early-stage project
+
+---
+
+## License
+MIT License
