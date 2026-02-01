@@ -1,9 +1,10 @@
 import sys
 from forge.commands import auth, repo
+from update import run_update
 
 def main():
     if len(sys.argv) < 2:
-        print("Use a valid command: init, login, register, logout, whoami, add, remove, commit, checkout, push, clone, help")
+        print("Use a valid command: init, login, register, logout, whoami, add, remove, commit, checkout, push, clone, help, update")
         return
 
     cmd = sys.argv[1]
@@ -16,7 +17,8 @@ def main():
         auth.logout_user()
     elif cmd == "whoami":
         auth.whoami()
-
+    elif cmd == "update":
+        run_update()
     elif cmd == "init":
         repo.init_repo()
     elif cmd == "add":
@@ -45,7 +47,7 @@ def main():
         repo.clone(repo_full, dir_path)
 
     elif cmd == "help":
-        print("Commands: register, login, logout, whoami, init, add, commit, checkout, push, clone")
+        print("Commands: register, login, logout, whoami, init, add, commit, checkout, push, clone, update")
     else:
         print("Unknown command. Use 'help'.")
 
