@@ -3,7 +3,7 @@ from forge.commands import auth, repo
 from update import run_update
 from pathlib import Path
 
-VERSION = "v0.2.1"
+VERSION = "v0.2.2"
 
 def main():
     if len(sys.argv) < 2:
