@@ -1,6 +1,6 @@
 .forge
 .venv
+output
 *.pyc
-remote/repos/*
 __pycache__
 .env*

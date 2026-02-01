@@ -7,14 +7,18 @@ from pathlib import Path
 import getpass
 from dotenv import load_dotenv
 
-load_dotenv()
+def resource_path(rel_path: str) -> str:
+    base = getattr(sys, "_MEIPASS", os.path.abspath("."))
+    return os.path.join(base, rel_path)
+
+load_dotenv(resource_path(".env"))
 
 folder_name = ".forge"
 folder_path = f"./{folder_name}"
 server_url = os.getenv("FORGE_SERVER_URL", "http://localhost:8000").rstrip("/")
 
 USER_SESSION_FILE = Path(
-    os.getenv("FORGE_SESSION", str(Path.home() / ".forge_session"))
+    str(Path.home() / os.getenv("FORGE_SESSION"))
 ).expanduser()
 
 
@@ -72,15 +76,11 @@ def register_user() -> None:
     
     # Initiate registration
     try:
-        print(f"[Debug] Connecting to {server_url}/api/auth/register/initiate...")
         response = requests.post(
             f"{server_url}/api/auth/register/initiate",
             json={"username": username, "email": email, "password": password},
             timeout=10
         )
-        
-        print(f"[Debug] Status code: {response.status_code}")
-        print(f"[Debug] Response text: {response.text[:200]}")
         
         if response.status_code != 200:
             try:
