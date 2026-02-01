@@ -103,6 +103,10 @@ def run_update() -> None:
         updater_py.write_text(UPDATER_SCRIPT, encoding="utf-8")
 
         target_exe = Path(sys.executable).resolve()
+        
+        print("[Update] Target exe:", Path(sys.executable).resolve())
+        print("[Update] Temp exe:", downloaded.resolve())
+
         if target_exe.suffix.lower() != ".exe":
             print("[Update] You are not running from a .exe build. Build/install Forge EXE first.")
             return
