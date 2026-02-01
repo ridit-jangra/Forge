@@ -1,6 +1,9 @@
 import sys
 from forge.commands import auth, repo
 from update import run_update
+from pathlib import Path
+
+VERSION = "v0.1.5"
 
 def main():
     if len(sys.argv) < 2:
@@ -45,9 +48,10 @@ def main():
         repo_full = sys.argv[2]
         dir_path = sys.argv[3] if len(sys.argv) >= 4 else ""
         repo.clone(repo_full, dir_path)
-
     elif cmd == "help":
         print("Commands: register, login, logout, whoami, init, add, commit, checkout, push, clone, update")
+    elif cmd == "version":
+        print(f"Version: {VERSION}")
     else:
         print("Unknown command. Use 'help'.")
 
