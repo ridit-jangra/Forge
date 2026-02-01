@@ -5,21 +5,12 @@ import datetime
 import requests
 from pathlib import Path
 import getpass
-from dotenv import load_dotenv
-
-def resource_path(rel_path: str) -> str:
-    base = getattr(sys, "_MEIPASS", os.path.abspath("."))
-    return os.path.join(base, rel_path)
-
-load_dotenv(resource_path(".env"))
 
 folder_name = ".forge"
 folder_path = f"./{folder_name}"
-server_url = os.getenv("FORGE_SERVER_URL", "http://localhost:8000").rstrip("/")
+server_url = os.getenv("FORGE_SERVER_URL", "https://vault.ridit.space")
 
-USER_SESSION_FILE = Path(
-    str(Path.home() / os.getenv("FORGE_SESSION"))
-).expanduser()
+USER_SESSION_FILE = (Path.home() / os.getenv("FORGE_SESSION", ".forge_session")).expanduser()
 
 
 def save_user_session(user_data: dict, token: str) -> None:
