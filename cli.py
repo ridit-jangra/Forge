@@ -50,7 +50,6 @@ def main():
     elif cmd == "help":
         print("Commands: register, login, logout, whoami, init, add, commit, checkout, push, clone, update")
     elif cmd == "version":
-        repo_full = sys.argv[2]
         print(f"Version: {__version__}")
     else:
         print("Unknown command. Use 'help'.")
