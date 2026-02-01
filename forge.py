@@ -406,44 +406,58 @@ def get_commit(commit_id: str) -> dict:
     return target_commit_entry
 
 def add_all() -> None:
+    if not os.path.exists(folder_path):
+        print("Init a repo first.")
+        return
+
+    repo_root = Path.cwd().resolve()
+
     ignore_paths = [".forge"]
     if os.path.exists(".forgeignore"):
-        with open(".forgeignore", "r") as f:
+        with open(".forgeignore", "r", encoding="utf-8", errors="ignore") as f:
             ignore_paths += [line.strip() for line in f if line.strip()]
 
-    current_commit = get_commit(get_current_commit())
-    tracked_files = {f.get("file_path"): f for f in current_commit.get("files")}
-    ignore_set = {Path(p).resolve() for p in ignore_paths}
+    ignore_set = {(repo_root / p).resolve() for p in ignore_paths}
 
     def ignored(p: Path) -> bool:
         p = p.resolve()
         return any(p.is_relative_to(x) for x in ignore_set)
 
-    for root, dirs, files in os.walk("."):
+    current_commit = get_commit(get_current_commit())
+    tracked_files = {f.get("file_path"): f for f in (current_commit.get("files") or [])}
+
+    for root, dirs, files in os.walk(repo_root):
         root_p = Path(root)
 
         dirs[:] = [d for d in dirs if not ignored(root_p / d)]
 
-        existing_files = {os.path.join(root, f) for f in files}
-        
-        for file_path in list(tracked_files.keys()):
-            if file_path not in existing_files and ".forge" not in file_path:
-                remove_file(file_path)
-                print("Removing missing file:", file_path)
-                tracked_files.pop(file_path)
+        existing_files = {
+            (Path(root) / f).resolve().relative_to(repo_root).as_posix()
+            for f in files
+        }
 
-        for file in files:
-            p = (root_p / file)
-            if ignored(p) and p.name != ".forgeignore":
+        for tracked_path in list(tracked_files.keys()):
+            norm_tracked = str(tracked_path).replace("\\", "/").lstrip("./")
+            if norm_tracked not in existing_files and ".forge" not in norm_tracked:
+                remove_file(tracked_path)
+                print("Removing missing file:", tracked_path)
+                tracked_files.pop(tracked_path, None)
+
+        for name in files:
+            abs_path = (root_p / name)
+            if ignored(abs_path) and abs_path.name != ".forgeignore":
                 continue
 
+            rel_path = abs_path.resolve().relative_to(repo_root).as_posix()
+
             try:
-                with open(file_path, "r") as f:
+                with open(abs_path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                add_file({"path": file_path, "content": content})
-                print("Tracking file:", file_path)
+
+                add_file({"path": rel_path, "content": content})
+                print("Tracking file:", rel_path)
             except Exception as e:
-                print(f"Error reading file: {e}")
+                print(f"Error reading file {rel_path}: {e}")
 
 def checkout_commit(commit_id: str) -> None:
     commit = get_commit(commit_id)
