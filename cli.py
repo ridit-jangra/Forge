@@ -2,8 +2,7 @@ import sys
 from forge.commands import auth, repo
 from update import run_update
 from pathlib import Path
-
-VERSION = "v0.2.2"
+from version import __version__
 
 def main():
     if len(sys.argv) < 2:
@@ -21,7 +20,7 @@ def main():
     elif cmd == "whoami":
         auth.whoami()
     elif cmd == "update":
-        run_update()
+            run_update()
     elif cmd == "init":
         repo.init_repo()
     elif cmd == "add":
@@ -51,7 +50,8 @@ def main():
     elif cmd == "help":
         print("Commands: register, login, logout, whoami, init, add, commit, checkout, push, clone, update")
     elif cmd == "version":
-        print(f"Version: {VERSION}")
+        repo_full = sys.argv[2]
+        print(f"Version: {__version__}")
     else:
         print("Unknown command. Use 'help'.")
 

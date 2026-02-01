@@ -1,10 +1,10 @@
 import sys
-import time
 import tempfile
 import subprocess
 from pathlib import Path
 
 import requests
+from version import VERSION
 
 GITHUB_OWNER = "ridit-jangra"
 GITHUB_REPO = "Forge"
@@ -34,24 +34,40 @@ def _download(url: str, out_path: Path) -> None:
         print()
 
 
-def _latest_assets() -> dict:
+def _latest_release() -> dict:
     r = requests.get(
         API_LATEST,
         timeout=20,
         headers={"Accept": "application/vnd.github+json"},
     )
     r.raise_for_status()
-    data = r.json()
+    return r.json()
 
-    assets = data.get("assets") or []
+
+def _assets_map(release_json: dict) -> dict:
+    assets = release_json.get("assets") or []
     by_name = {}
     for a in assets:
         name = (a.get("name") or "").strip()
         url = (a.get("browser_download_url") or "").strip()
         if name and url:
             by_name[name.lower()] = url
-
     return by_name
+
+
+def _normalize_tag(tag: str) -> str:
+    return (tag or "").strip()
+
+
+def check_update() -> bool:
+    try:
+        release = _latest_release()
+        latest_tag = _normalize_tag(release.get("tag_name"))
+        if not latest_tag:
+            return False
+        return latest_tag != VERSION
+    except Exception:
+        return False
 
 
 def run_update() -> None:
@@ -60,15 +76,26 @@ def run_update() -> None:
         return
 
     try:
-        assets = _latest_assets()
+        release = _latest_release()
+        latest_tag = _normalize_tag(release.get("tag_name"))
+
+        if not latest_tag:
+            print("[Update] Could not read latest version from GitHub.")
+            return
+
+        if latest_tag == VERSION:
+            print(f"[Update] Already up to date ({VERSION}).")
+            return
+
+        assets = _assets_map(release)
         forge_url = assets.get(FORGE_ASSET.lower())
         updater_url = assets.get(UPDATER_ASSET.lower())
 
         if not forge_url:
-            print(f"[Update] Latest release does not contain '{FORGE_ASSET}'.")
+            print(f"[Update] Latest release ({latest_tag}) does not contain '{FORGE_ASSET}'.")
             return
         if not updater_url:
-            print(f"[Update] Latest release does not contain '{UPDATER_ASSET}'.")
+            print(f"[Update] Latest release ({latest_tag}) does not contain '{UPDATER_ASSET}'.")
             return
 
     except Exception as e:
@@ -80,6 +107,8 @@ def run_update() -> None:
     downloaded_updater = (tmp_dir / UPDATER_ASSET).resolve()
 
     try:
+        print(f"[Update] Current: {VERSION} | Latest: {latest_tag}")
+
         print(f"[Update] Downloading: {FORGE_ASSET}")
         _download(forge_url, downloaded_forge)
 
