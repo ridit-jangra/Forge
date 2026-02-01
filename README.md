@@ -42,6 +42,8 @@ Cloning or forking a repo pulls data back from Vault to your local machine.
 
 ### Option 1: Python (Development)
 
+This option is recommended if you are developing Forge or running it directly from source.
+
 ```bash
 git clone https://github.com/ridit-jangra/Forge
 cd Forge
@@ -53,15 +55,23 @@ python forge.py <command>
 
 ### Option 2: Executable (Recommended)
 
+If you downloaded the compiled executable:
+
 ```bash
 forge.exe <command>
 ```
 
-No Python installation required.
+No Python installation or configuration is required.
 
 ---
 
-## Configuration
+## Vault Configuration
+
+⚠️ **Vault configuration is only required when using Forge via Python (development mode).**
+
+When using the **compiled executable**, Vault configuration is **already set internally**, and you do not need to configure anything.
+
+### Python-only Configuration
 
 Forge connects to Vault using environment variables.
 
@@ -72,7 +82,7 @@ FORGE_SERVER_URL=http://localhost:8000
 FORGE_SESSION=.forge_session
 ```
 
-If not set, sensible defaults are used.
+If these variables are not set, sensible defaults are used.
 
 ---
 
@@ -132,6 +142,7 @@ forge push
 
 forge clone 12/sample
 ```
+
 ---
 
 ## Limitations
