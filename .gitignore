@@ -3,3 +3,4 @@
 *.pyc
 remote/repos/*
 __pycache__
+.env*
