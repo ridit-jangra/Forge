@@ -1,7 +1,19 @@
 # Forge
 
-**Forge** is a lightweight, Git-like version control system built in Python with a custom remote server.  
-It allows you to track files, commit changes, push to a remote repository, clone repos, and manage versions using a simple CLI.
+**Forge** is a lightweight, Git-like version control system built in Python with a custom remote backend.  
+It allows you to track files, commit changes, and synchronize repositories with a remote server using a simple CLI.
+
+Forge works together with **Vault**, which acts as the remote storage layer where your repositories, commits, and files are stored.
+
+---
+
+## Architecture Overview
+
+- **Forge** → CLI tool you run locally (version control client)
+- **Vault** → Remote server that stores repositories, commits, and file data
+
+When you push a repository using Forge, **your entire repo is stored remotely in Vault**.  
+Cloning or forking a repo pulls data back from Vault to your local machine.
 
 ---
 
@@ -16,13 +28,13 @@ It allows you to track files, commit changes, push to a remote repository, clone
 - List commit history (`list commits`)
 - `.forgeignore` support for ignoring files and folders
 
-### Remote Features
+### Remote (Vault-powered)
 - User authentication (`register`, `login`, `logout`)
-- Push repositories to a Forge server (`push`)
-- Clone remote repositories (`clone`)
-- Fork repositories (`fork`)
+- Push repositories to the remote Vault server (`push`)
+- Clone repositories stored in Vault (`clone`)
+- Fork repositories into your account (`fork`)
 - List your repositories (`repos`)
-- Delete repositories (`delete`)
+- Delete remote repositories (`delete`)
 
 ---
 
@@ -51,6 +63,8 @@ No Python installation required.
 
 ## Configuration
 
+Forge connects to Vault using environment variables.
+
 Optional `.env` file:
 
 ```env
@@ -58,24 +72,73 @@ FORGE_SERVER_URL=http://localhost:8000
 FORGE_SESSION=.forge_session
 ```
 
+If not set, sensible defaults are used.
+
 ---
 
 ## Usage
+
+### Initialize Repository
+```bash
+forge init
+```
+
+### Track & Commit
+```bash
+forge add .
+forge commit "Initial commit"
+```
+
+### Push to Vault (Remote)
+```bash
+forge push
+```
+
+Your repository, commits, and files are now **stored remotely in Vault**.
+
+---
+
+## Remote Operations
+
+```bash
+forge clone <owner_id>/<repo_name>
+forge fork <owner_id>/<repo_name>
+forge repos
+forge delete
+```
+
+---
+
+## `.forgeignore`
+
+Example:
+
+```text
+node_modules
+.env
+*.log
+dist
+```
+
+---
+
+## Example Workflow
 
 ```bash
 forge init
 forge add .
 forge commit "Initial commit"
 forge push
-```
 
+forge clone 12/sample
+```
 ---
 
 ## Limitations
 - Text files only
 - No branches or merges
 - Linear history
-- Early-stage project
+- Early-stage project (breaking changes possible)
 
 ---
 
