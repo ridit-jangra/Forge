@@ -5,7 +5,7 @@ import requests
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from ..config import SERVER_URL, DEFAULT_TIMEOUT, FOLDER_PATH
+from ..config import SERVER_URL, DEFAULT_TIMEOUT
 from ..session import get_auth_headers
 from ..http import safe_json
 from .. import repo_store as store
