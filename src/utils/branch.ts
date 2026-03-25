@@ -285,7 +285,12 @@ export function switchBranch(
     ) as Checkpoint;
     const targetLatestCommitId = getLatestCommitId(repo_path, branch_name);
 
-    if (targetLatestCommitId.latestCommitId === checkpointData.commitId) {
+    const checkpointIsLatest =
+      targetLatestCommitId.latestCommitId === checkpointData.commitId ||
+      new Date(checkpointData.date) >=
+        new Date(latestCommit?.commit?.date ?? 0);
+
+    if (checkpointIsLatest) {
       checkpointData.files.forEach((file) =>
         fs.writeFileSync(file.path, file.content),
       );
