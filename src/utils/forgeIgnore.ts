@@ -16,17 +16,15 @@ export function matchPaths(files: string[]): {
 
   if (!fs.existsSync(forgeignoreFile)) ignoreFile = gitignoreFile;
   else if (fs.existsSync(forgeignoreFile)) ignoreFile = forgeignoreFile;
-  else {
-    return {
-      status: "error",
-      error: "Consider making .forgeignore or .gitignore",
-    };
+
+  if (ignoreFile && fs.existsSync(ignoreFile)) {
+    const content = fs.readFileSync(ignoreFile, "utf-8");
+    ig.add(content);
   }
 
-  const content = fs.readFileSync(ignoreFile, "utf-8");
-  ig.add(content);
-
   ig.add(".git");
+  ig.add(".forge");
+  ig.add("node_modules");
 
   const checkedFiles: string[] = [];
 

@@ -48,3 +48,23 @@ export function commit(
 
   return { status: "ok" };
 }
+
+export function logCommits(repo_path: string): {
+  status: "ok" | "error";
+  error?: string;
+  commits?: string[];
+} {
+  const forgeFolder = path.join(repo_path, ".forge");
+  const commitFolder = path.join(forgeFolder, "commits");
+
+  if (!fs.existsSync(commitFolder))
+    return {
+      status: "error",
+      error: "commits folder is missing, consider reinitialize repo.",
+    };
+
+  const files = fs.readdirSync(commitFolder, { recursive: true });
+  const commits = files.map((file) => path.basename(file.toString(), ".json"));
+
+  return { status: "ok", commits };
+}

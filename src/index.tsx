@@ -3,6 +3,8 @@ import { InitCommand } from "./commands/init";
 import { render } from "ink";
 import { AddCommand } from "./commands/add";
 import { CommitCommand } from "./commands/commit";
+import { CheckoutCommand } from "./commands/checkout";
+import { LogCommand } from "./commands/log";
 
 const program = new Command();
 
@@ -14,7 +16,8 @@ program
   });
 
 program
-  .command("add <path>")
+  .command("add")
+  .argument("[path]")
   .description("add a file or everything")
   .action((path) => {
     render(<AddCommand fileOrFolderPath={path} />);
@@ -34,5 +37,16 @@ program
       />,
     );
   });
+
+program
+  .command("checkout")
+  .argument("[commit]")
+  .action((commit) => {
+    render(<CheckoutCommand commitId={commit} />);
+  });
+
+program.command("log").action(() => {
+  render(<LogCommand />);
+});
 
 program.parse(process.argv);
