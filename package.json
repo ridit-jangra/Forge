@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "commander": "^14.0.3",
+    "figures": "^6.1.0",
+    "ignore": "^7.0.5",
     "ink": "^6.8.0",
     "ink-spinner": "^5.0.0",
     "react": "^19.2.4"

@@ -9,6 +9,7 @@ export function initRepo(folder_path: string): {
   const cwd = folder_path;
   const forgeFolder = path.join(cwd, ".forge");
   const repoInfoFile = path.join(forgeFolder, "repo.json");
+  const tempAddedFiles = path.join(forgeFolder, "tempAddedFiles.json");
   const commitsFolder = path.join(forgeFolder, "commits");
 
   if (fs.existsSync(forgeFolder)) {
@@ -25,6 +26,8 @@ export function initRepo(folder_path: string): {
       isFork: false,
     } as Repo),
   );
+
+  fs.writeFileSync(tempAddedFiles, JSON.stringify({ files: [] }));
 
   fs.mkdirSync(commitsFolder, { recursive: true });
 
