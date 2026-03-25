@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
 import type { Repo } from "../types/repo";
+import { createBranch } from "./branch";
 
 export function initRepo(folder_path: string): {
   status: "ok" | "error";
@@ -22,14 +23,36 @@ export function initRepo(folder_path: string): {
     repoInfoFile,
     JSON.stringify({
       name: path.basename(folder_path),
-      commits: [],
       isFork: false,
+      branch: "main",
     } as Repo),
   );
 
   fs.writeFileSync(tempAddedFiles, JSON.stringify({ files: [] }));
 
   fs.mkdirSync(commitsFolder, { recursive: true });
+
+  const res = createBranch(".", "main");
+  if (res.error) return { status: "error", error: res.error };
+
+  return { status: "ok" };
+}
+
+export function updateRepo(
+  repo_path: string,
+  data: Partial<Repo>,
+): { status: "ok" | "error"; error?: string } {
+  const forgeFolder = path.join(repo_path, ".forge");
+  const repoInfoFile = path.join(forgeFolder, "repo.json");
+
+  if (!fs.existsSync(repoInfoFile))
+    return {
+      status: "error",
+      error: "repo.json is missing, consider reinitialize repo.",
+    };
+
+  const current = JSON.parse(fs.readFileSync(repoInfoFile, "utf-8")) as Repo;
+  fs.writeFileSync(repoInfoFile, JSON.stringify({ ...current, ...data }));
 
   return { status: "ok" };
 }

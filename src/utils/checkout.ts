@@ -1,16 +1,31 @@
 import path from "path";
 import fs from "fs";
 import type { Commit } from "../types/commit";
+import { getCurrentBranch } from "./branch";
 
 export function checkoutCommit(
   commitId: string,
   repo_path: string,
+  branch_name?: string,
 ): {
   status: "ok" | "error";
   error?: string;
 } {
   const forgeFolder = path.join(repo_path, ".forge");
-  const commitFolder = path.join(forgeFolder, "commits");
+  const currentBranch = getCurrentBranch(repo_path);
+  if (currentBranch.error || !currentBranch.branch) {
+    return {
+      status: "error",
+      error: currentBranch.error || "no current branch found.",
+    };
+  }
+  const branchName = currentBranch.branch.name ?? branch_name;
+  const commitFolder = path.join(
+    forgeFolder,
+    "branches",
+    branchName,
+    "commits",
+  );
   const commitFile = path.join(commitFolder, `${commitId}.json`);
 
   if (!fs.existsSync(commitFolder))

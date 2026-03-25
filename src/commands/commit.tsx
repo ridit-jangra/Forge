@@ -3,7 +3,8 @@ import { Box, Text } from "ink";
 import { ACCENT, GREEN, RED, TEXT } from "../colors";
 import { useEffect, useState } from "react";
 import Spinner from "ink-spinner";
-import { commit } from "../utils/commit";
+import { commitInBranch } from "../utils/commit";
+import { getCurrentBranch } from "../utils/branch";
 
 export function CommitCommand({
   isAll,
@@ -24,7 +25,18 @@ export function CommitCommand({
   }, []);
 
   useEffect(() => {
-    const res = commit(message, ".");
+    const branch = getCurrentBranch(".");
+
+    if (branch.error) {
+      setError(branch.error);
+      return;
+    }
+    if (!branch.branch) {
+      setError("no branch found.");
+      return;
+    }
+
+    const res = commitInBranch(message, ".", branch.branch.name);
     if (res.error) {
       setError(res.error);
       return;

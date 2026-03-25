@@ -5,6 +5,7 @@ import { AddCommand } from "./commands/add";
 import { CommitCommand } from "./commands/commit";
 import { CheckoutCommand } from "./commands/checkout";
 import { LogCommand } from "./commands/log";
+import { BranchCommand } from "./commands/branch";
 
 const program = new Command();
 
@@ -41,12 +42,31 @@ program
 program
   .command("checkout")
   .argument("[commit]")
-  .action((commit) => {
-    render(<CheckoutCommand commitId={commit} />);
+  .option("-b, --branch <branch>", "specify which branch commit")
+  .action((commit, options) => {
+    render(<CheckoutCommand commitId={commit} branch={options.branch} />);
   });
 
-program.command("log").action(() => {
-  render(<LogCommand />);
-});
+program
+  .command("log")
+  .option("-g, --global", "log all commits")
+  .action((options) => {
+    render(<LogCommand global={options.global} />);
+  });
+
+program
+  .command("branch")
+  .argument("[name]")
+  .option("-d, --delete", "delete a branch")
+  .option("-s, --switch", "switch branches")
+  .action((name, options) => {
+    render(
+      <BranchCommand
+        name={name}
+        isDelete={options.delete}
+        isSwitch={options.switch}
+      />,
+    );
+  });
 
 program.parse(process.argv);

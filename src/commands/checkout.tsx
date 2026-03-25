@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import Spinner from "ink-spinner";
 import { checkoutCommit } from "../utils/checkout";
 
-export function CheckoutCommand({ commitId }: { commitId: string }) {
+export function CheckoutCommand({
+  commitId,
+  branch,
+}: {
+  commitId: string;
+  branch?: string;
+}) {
   const [stage, setStage] = useState<"working" | "done">("working");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const res = checkoutCommit(commitId, ".");
+    const res = checkoutCommit(commitId, ".", branch);
     if (res.error) {
       setError(res.error);
       return;

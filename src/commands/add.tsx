@@ -140,6 +140,11 @@ export function AddCommand({ fileOrFolderPath }: { fileOrFolderPath: string }) {
       {stage === "done" && (
         <Box flexDirection="column">
           <Text color={GREEN}>✓ Added {indexAddedCount} files</Text>
+          {filesChecked.map((file) => (
+            <Text key={file} color={"gray"}>
+              {file}
+            </Text>
+          ))}
         </Box>
       )}
     </>
