@@ -2,7 +2,12 @@ import { Box, Text } from "ink";
 import { useEffect, useState } from "react";
 import { ACCENT, GREEN, RED } from "../colors";
 import Spinner from "ink-spinner";
-import { createBranch, mergeBranch, switchBranch } from "../utils/branch";
+import {
+  createBranch,
+  deleteBranch,
+  mergeBranch,
+  switchBranch,
+} from "../utils/branch";
 import { switchEmitter } from "../utils/switchEvents";
 import type { SwitchEvent } from "../utils/switchEvents";
 
@@ -57,6 +62,11 @@ export function BranchCommand({
         return;
       }
     } else if (isDelete) {
+      const res = deleteBranch(".", name);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
     } else if (isMerge) {
       if (!mergingBranchName) {
         setError("specify target branch name.");

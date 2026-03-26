@@ -8,6 +8,6 @@ export type FileStatus =
 export interface FileBlob {
   name: string;
   path: string;
-  content: string;
+  hash: string;
   status: FileStatus;
 }

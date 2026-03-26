@@ -12,6 +12,7 @@ import { updateRepo } from "./repo";
 import type { Checkpoint } from "../types/checkpoint";
 import { switchEmitter } from "./switchEvents";
 import { checkoutCommit } from "./checkout";
+import { readObject, writeObject } from "./objects";
 
 function getBranchPaths(repo_path: string, branch_name?: string) {
   const forgeFolder = path.join(repo_path, ".forge");
@@ -265,7 +266,7 @@ export function switchBranch(
   const fileBlobs = files.files?.map((f) => ({
     name: path.basename(f),
     path: f,
-    content: fs.readFileSync(f, "utf-8").toString(),
+    hash: writeObject(repo_path, fs.readFileSync(f).toString()),
     status: determineFileStatus(repo_path, f).file_status ?? "untracked",
   })) as FileBlob[];
 
@@ -322,7 +323,7 @@ export function switchBranch(
 
     if (checkpointIsLatest) {
       checkpointData.files.forEach((file) =>
-        fs.writeFileSync(file.path, file.content),
+        fs.writeFileSync(file.path, readObject(repo_path, file.hash)),
       );
       switchEmitter.emit("event", {
         type: "files_restored",
@@ -331,8 +332,9 @@ export function switchBranch(
       });
     } else {
       latestCommit?.commit?.fileBlobs.forEach((file) =>
-        fs.writeFileSync(file.path, file.content),
+        fs.writeFileSync(file.path, readObject(repo_path, file.hash)),
       );
+
       switchEmitter.emit("event", {
         type: "files_restored",
         files: latestCommit?.commit?.fileBlobs.map((f) => f.path) ?? [],
@@ -341,7 +343,7 @@ export function switchBranch(
     }
   } else {
     latestCommit?.commit?.fileBlobs.forEach((file) =>
-      fs.writeFileSync(file.path, file.content),
+      fs.writeFileSync(file.path, readObject(repo_path, file.hash)),
     );
     switchEmitter.emit("event", {
       type: "files_restored",
@@ -466,14 +468,14 @@ export function mergeBranch(
       (f) =>
         sharedCommitOfCurrentBranch.commit!.fileBlobs.find(
           (s) => s.path === f.path,
-        )?.content !== f.content,
+        )?.hash !== f.hash,
     );
 
     targetChanged = latestCommitOfTargetBranch.commit.fileBlobs.filter(
       (f) =>
         sharedCommitOfCurrentBranch.commit!.fileBlobs.find(
           (s) => s.path === f.path,
-        )?.content !== f.content,
+        )?.hash !== f.hash,
     );
 
     conflict = currentChanged.some((cf) =>
@@ -556,6 +558,33 @@ export function mergeBranch(
     to: current_branch,
     filesChanged: targetChanged.length,
   });
+
+  return { status: "ok" };
+}
+
+export function deleteBranch(
+  repo_path: string,
+  branch_name: string,
+): { status: "ok" | "error"; error?: string } {
+  const { branchFolder, branchesFolder } = getBranchPaths(
+    repo_path,
+    branch_name,
+  );
+
+  if (!fs.existsSync(branchesFolder))
+    return {
+      status: "error",
+      error: "branches folder is missing, consider reinitialize repo.",
+    };
+
+  if (!fs.existsSync(branchFolder!))
+    return { status: "error", error: `${branch_name} doesn't exists.` };
+
+  const currentBranch = getCurrentBranch(repo_path);
+  if (currentBranch.branch?.name === branch_name)
+    return { status: "error", error: `cannot delete current branch.` };
+
+  fs.rmSync(branchFolder!, { recursive: true, force: true });
 
   return { status: "ok" };
 }

@@ -13,6 +13,7 @@ export function initRepo(folder_path: string): {
   const repoInfoFile = path.join(forgeFolder, "repo.json");
   const tempAddedFiles = path.join(forgeFolder, "tempAddedFiles.json");
   const commitsFolder = path.join(forgeFolder, "commits");
+  const objectsFolder = path.join(forgeFolder, "objects");
 
   if (fs.existsSync(forgeFolder)) {
     return { status: "error", error: "Repo already exists" };
@@ -32,6 +33,7 @@ export function initRepo(folder_path: string): {
   fs.writeFileSync(tempAddedFiles, JSON.stringify({ files: [] }));
 
   fs.mkdirSync(commitsFolder, { recursive: true });
+  fs.mkdirSync(objectsFolder, { recursive: true });
 
   const res = createBranch(".", "main");
   if (res.error) return { status: "error", error: res.error };

@@ -68,7 +68,7 @@ export function StatusCommand() {
               </Box>
             ))
           ) : (
-            <Text color={TEXT}>No files found</Text>
+            <Text color={TEXT}>No files changed</Text>
           )}
         </Box>
       )}

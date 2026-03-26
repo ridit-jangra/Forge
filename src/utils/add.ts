@@ -3,6 +3,7 @@ import fs from "fs";
 import type { FileBlob, FileStatus } from "../types/files";
 import { getCommit, getLatestCommitId } from "./commit";
 import { getCurrentBranch } from "./branch";
+import { hashContent, readObject, writeObject } from "./objects";
 
 export function addFile(
   file_path: string,
@@ -32,12 +33,15 @@ export function addFile(
 
   let fileStatus = determineFileStatus(repo_path, file_path);
 
+  const content = fs.readFileSync(file_path).toString();
+  const hash = writeObject(repo_path, content);
+
   const newTempFiles = [
     ...tempFiles,
     {
       name: path.basename(file_path),
       path: file_path,
-      content: fs.readFileSync(file_path).toString(),
+      hash: hash,
       status: fileStatus.file_status ?? "untracked",
     } as FileBlob,
   ];
@@ -104,13 +108,13 @@ export function determineFileStatus(
   if (
     targetComittedFile &&
     isInDisk &&
-    targetComittedFile.content !== diskFileContent
+    readObject(repo_path, targetComittedFile.hash) !== diskFileContent
   )
     return { status: "ok", file_status: "modified" };
   else if (
     targetComittedFile &&
     isInDisk &&
-    targetComittedFile.content === diskFileContent
+    readObject(repo_path, targetComittedFile.hash) === diskFileContent
   )
     return { status: "ok", file_status: "unchanged" };
   else if (!targetComittedFile && targetTempFile)

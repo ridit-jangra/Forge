@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import type { Commit } from "../types/commit";
 import { getCurrentBranch } from "./branch";
+import { readObject } from "./objects";
 
 export function checkoutCommit(
   commitId: string,
@@ -49,7 +50,7 @@ export function checkoutCommit(
   );
 
   files.forEach((file) => {
-    fs.writeFileSync(file.path, file.content);
+    fs.writeFileSync(file.path, readObject(repo_path, file.hash));
   });
 
   return { status: "ok" };
