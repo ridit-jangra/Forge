@@ -68,7 +68,9 @@ export function createBranch(
         "commits",
       );
 
-      fs.cpSync(commitsFolder, newBranchCommitsFolder, { recursive: true });
+      try {
+        fs.cpSync(commitsFolder, newBranchCommitsFolder, { recursive: true });
+      } catch {}
 
       fs.writeFileSync(
         branchDataFile!,
