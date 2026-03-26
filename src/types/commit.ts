@@ -5,6 +5,7 @@ export interface Commit {
   message: string;
   fileBlobs: FileBlob[];
   date: string;
+  parent?: string;
 }
 
 export interface CommitRef {

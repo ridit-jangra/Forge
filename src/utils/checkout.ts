@@ -19,7 +19,7 @@ export function checkoutCommit(
       error: currentBranch.error || "no current branch found.",
     };
   }
-  const branchName = currentBranch.branch.name ?? branch_name;
+  const branchName = branch_name ?? currentBranch.branch.name;
   const commitFolder = path.join(
     forgeFolder,
     "branches",
@@ -42,6 +42,11 @@ export function checkoutCommit(
 
   const commitData: Commit = JSON.parse(fs.readFileSync(commitFile, "utf-8"));
   const files = commitData.fileBlobs;
+
+  console.log(
+    "restoring files:",
+    files.map((f) => f.path),
+  );
 
   files.forEach((file) => {
     fs.writeFileSync(file.path, file.content);

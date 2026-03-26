@@ -71,12 +71,21 @@ export function commitInBranch(
 
   const fileBlobs = tempFiles;
 
+  let parentCommit;
+
+  const latestCommitId = getLatestCommitId(repo_path, branch_name);
+  if (latestCommitId.error || !latestCommitId.latestCommitId) {
+  } else {
+    parentCommit = latestCommitId.latestCommitId;
+  }
+
   const newCommitId = crypto.randomUUID();
   const newCommit: Commit = {
     id: newCommitId,
     message: message,
     fileBlobs,
     date: new Date().toISOString(),
+    parent: parentCommit,
   };
 
   fs.writeFileSync(

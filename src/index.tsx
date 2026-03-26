@@ -6,6 +6,7 @@ import { CommitCommand } from "./commands/commit";
 import { CheckoutCommand } from "./commands/checkout";
 import { LogCommand } from "./commands/log";
 import { BranchCommand } from "./commands/branch";
+import { StatusCommand } from "./commands/status";
 
 const program = new Command();
 
@@ -59,14 +60,21 @@ program
   .argument("[name]")
   .option("-d, --delete", "delete a branch")
   .option("-s, --switch", "switch branches")
+  .option("-m, --merge <branch>", "merge branches")
   .action((name, options) => {
     render(
       <BranchCommand
         name={name}
         isDelete={options.delete}
         isSwitch={options.switch}
+        isMerge={!!options.merge}
+        mergingBranchName={options.merge}
       />,
     );
   });
+
+program.command("status").action(() => {
+  render(<StatusCommand />);
+});
 
 program.parse(process.argv);

@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import type { Repo } from "../types/repo";
 import { createBranch } from "./branch";
+import { createDefaultForgeIgnore } from "./forgeIgnore";
 
 export function initRepo(folder_path: string): {
   status: "ok" | "error";
@@ -34,6 +35,9 @@ export function initRepo(folder_path: string): {
 
   const res = createBranch(".", "main");
   if (res.error) return { status: "error", error: res.error };
+
+  const res_2 = createDefaultForgeIgnore(folder_path);
+  if (res_2.error) return { status: "error", error: res_2.error };
 
   return { status: "ok" };
 }

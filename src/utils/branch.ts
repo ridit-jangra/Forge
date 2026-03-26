@@ -11,6 +11,7 @@ import { commitInBranch, getCommit, getLatestCommitId } from "./commit";
 import { updateRepo } from "./repo";
 import type { Checkpoint } from "../types/checkpoint";
 import { switchEmitter } from "./switchEvents";
+import { checkoutCommit } from "./checkout";
 
 function getBranchPaths(repo_path: string, branch_name?: string) {
   const forgeFolder = path.join(repo_path, ".forge");
@@ -46,7 +47,36 @@ export function createBranch(
       JSON.stringify({ name: branch_name, latestCommitId: "" } as Branch),
     );
 
-    commitInBranch("Initial commit", repo_path, branch_name);
+    const currentBranch = getCurrentBranch(repo_path);
+    if (currentBranch.error || !currentBranch.branch) {
+      commitInBranch("Initial commit", repo_path, branch_name);
+    } else {
+      const branch = currentBranch.branch;
+      const commitsFolder = path.join(
+        repo_path,
+        ".forge",
+        "branches",
+        branch.name,
+        "commits",
+      );
+      const newBranchCommitsFolder = path.join(
+        repo_path,
+        ".forge",
+        "branches",
+        branch_name,
+        "commits",
+      );
+
+      fs.cpSync(commitsFolder, newBranchCommitsFolder, { recursive: true });
+
+      fs.writeFileSync(
+        branchDataFile!,
+        JSON.stringify({
+          name: branch_name,
+          latestCommitId: branch.latestCommitId,
+        } as Branch),
+      );
+    }
   } catch (err) {
     return { status: "error", error: err as string };
   }
@@ -327,6 +357,204 @@ export function switchBranch(
     type: "switched",
     from: currentBranch.branch.name,
     to: branch_name,
+  });
+
+  return { status: "ok" };
+}
+
+export function getCommitHistory(
+  repo_path: string,
+  branch_name: string,
+): string[] {
+  const commitIds: string[] = [];
+  const latestCommitId = getLatestCommitId(repo_path, branch_name);
+  if (!latestCommitId.latestCommitId) return commitIds;
+
+  let currentId: string | undefined = latestCommitId.latestCommitId;
+
+  while (currentId) {
+    commitIds.push(currentId);
+    const commit = getCommit(repo_path, currentId, branch_name);
+    currentId = commit.commit?.parent;
+  }
+
+  return commitIds;
+}
+
+export function mergeBranch(
+  current_branch: string,
+  target_branch: string,
+  repo_path: string,
+): { status: "ok" | "error"; error?: string } {
+  const currentBranchCommitHistory = getCommitHistory(
+    repo_path,
+    current_branch,
+  );
+  const targetBranchommitHistory = getCommitHistory(repo_path, target_branch);
+
+  let sharedCommit;
+
+  for (const cb of currentBranchCommitHistory) {
+    if (targetBranchommitHistory.includes(cb)) {
+      sharedCommit = cb;
+      break;
+    }
+  }
+
+  if (!sharedCommit)
+    return { status: "error", error: "no shared commit found." };
+
+  const latestCommitIdOfCurrentBranch = getLatestCommitId(
+    repo_path,
+    current_branch,
+  );
+  if (
+    latestCommitIdOfCurrentBranch.error ||
+    !latestCommitIdOfCurrentBranch.latestCommitId
+  )
+    return {
+      status: "error",
+      error: `no current latest commit in ${current_branch}`,
+    };
+
+  let conflict: boolean = false;
+  let targetChanged: FileBlob[] = [];
+
+  if (latestCommitIdOfCurrentBranch.latestCommitId === sharedCommit) {
+    conflict = false;
+  } else {
+    const latestCommitIdOfTargetBranch = getLatestCommitId(
+      repo_path,
+      target_branch,
+    );
+    if (
+      latestCommitIdOfTargetBranch.error ||
+      !latestCommitIdOfTargetBranch.latestCommitId
+    )
+      return {
+        status: "error",
+        error: `no current latest commit in ${target_branch}`,
+      };
+
+    const sharedCommitOfCurrentBranch = getCommit(
+      repo_path,
+      sharedCommit,
+      current_branch,
+    );
+    const latestCommitOfTargetBranch = getCommit(
+      repo_path,
+      latestCommitIdOfTargetBranch.latestCommitId,
+      target_branch,
+    );
+    const latestCommitOfCurrentBranch = getCommit(
+      repo_path,
+      latestCommitIdOfCurrentBranch.latestCommitId,
+      current_branch,
+    );
+
+    if (
+      sharedCommitOfCurrentBranch.error ||
+      !sharedCommitOfCurrentBranch.commit ||
+      latestCommitOfTargetBranch.error ||
+      !latestCommitOfTargetBranch.commit ||
+      latestCommitOfCurrentBranch.error ||
+      !latestCommitOfCurrentBranch.commit
+    )
+      return { status: "error", error: `` };
+
+    const currentChanged = latestCommitOfCurrentBranch.commit.fileBlobs.filter(
+      (f) =>
+        sharedCommitOfCurrentBranch.commit!.fileBlobs.find(
+          (s) => s.path === f.path,
+        )?.content !== f.content,
+    );
+
+    targetChanged = latestCommitOfTargetBranch.commit.fileBlobs.filter(
+      (f) =>
+        sharedCommitOfCurrentBranch.commit!.fileBlobs.find(
+          (s) => s.path === f.path,
+        )?.content !== f.content,
+    );
+
+    conflict = currentChanged.some((cf) =>
+      targetChanged.find((tf) => tf.path === cf.path),
+    );
+
+    if (conflict) {
+      const conflictFiles = currentChanged
+        .filter((cf) => targetChanged.find((tf) => tf.path === cf.path))
+        .map((f) => f.path);
+      switchEmitter.emit("event", {
+        type: "merge_conflict_detected",
+        files: conflictFiles,
+      });
+      return { status: "error", error: "conflict found." };
+    }
+  }
+
+  const targetBranchCommitFolder = path.join(
+    repo_path,
+    ".forge",
+    "branches",
+    target_branch,
+    "commits",
+  );
+  const currentBranchCommitFolder = path.join(
+    repo_path,
+    ".forge",
+    "branches",
+    current_branch,
+    "commits",
+  );
+
+  fs.cpSync(targetBranchCommitFolder, currentBranchCommitFolder, {
+    recursive: true,
+    force: true,
+  });
+
+  const latestCommitIdOfTargetBranch = getLatestCommitId(
+    repo_path,
+    target_branch,
+  );
+  if (
+    latestCommitIdOfTargetBranch.error ||
+    !latestCommitIdOfTargetBranch.latestCommitId
+  )
+    return {
+      status: "error",
+      error: `no latest commit found in ${target_branch}`,
+    };
+
+  updateBranch(
+    repo_path,
+    current_branch,
+    latestCommitIdOfTargetBranch.latestCommitId,
+  );
+
+  const latestCommitIdOfCurrentBranch2 = getLatestCommitId(
+    repo_path,
+    current_branch,
+  );
+  if (
+    latestCommitIdOfCurrentBranch2.error ||
+    !latestCommitIdOfCurrentBranch2.latestCommitId
+  )
+    return {
+      status: "error",
+      error: `no latest commit found in ${current_branch}`,
+    };
+
+  checkoutCommit(
+    latestCommitIdOfCurrentBranch2.latestCommitId,
+    repo_path,
+    current_branch,
+  );
+
+  switchEmitter.emit("event", {
+    type: "merge_complete",
+    from: target_branch,
+    to: current_branch,
+    filesChanged: targetChanged.length,
   });
 
   return { status: "ok" };

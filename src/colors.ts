@@ -4,3 +4,7 @@ export const TEXT = "#E8E8E8";
 export const RED = "#E06C75";
 export const GREEN = "#85C98A";
 export const CYAN = "#79C5D4";
+export const YELLOW = "#E5C07B"; // modified
+export const BLUE = "#61AFEF"; // staged
+export const GRAY = "#636D83"; // deleted
+export const PURPLE = "#C678DD"; // untracked
