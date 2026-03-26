@@ -1,6 +1,8 @@
 # Forge
 
-Forge is a lightweight version control system built from scratch. Designed to be simple, fast, and easy to understand — Forge gives you the core of a VCS without the complexity of Git.
+> Git, but yours.
+
+Forge is a lightweight version control system built from scratch. Designed to be simple and easy to understand — Forge gives you the core of a VCS without the complexity of Git.
 
 ## Installation
 
@@ -24,6 +26,7 @@ npm install -g @ridit/forge
 - **Status** — view modified, staged, untracked, and deleted files
 - **Checkpoints** — auto-saved snapshots when switching branches
 - **ForgeIgnore** — `.forgeignore` support to exclude files
+- **Content-addressable storage** — file content stored as hashed objects, never duplicated
 
 ## CLI Commands
 
@@ -56,15 +59,26 @@ Forge stores all data in a `.forge` folder at the root of your repository:
 
 ```
 .forge/
+├── objects/          ← content-addressable file storage (hashed)
 ├── commits/          ← global commit refs (lightweight)
 ├── branches/
 │   └── main/
 │       ├── branch.json       ← branch metadata + latest commit id
 │       ├── checkpoint.json   ← auto-snapshot saved on branch switch
-│       └── commits/          ← full commits with file blobs
+│       └── commits/          ← full commits with file hashes
 ├── repo.json         ← repo metadata + active branch
 └── tempAddedFiles.json  ← staging area
 ```
+
+## Object Storage
+
+Instead of storing full file content in every commit, Forge uses a content-addressable object store — similar to how Git works internally.
+
+- Every file is hashed with SHA-256 on `add`
+- The content is stored once in `.forge/objects/` keyed by hash
+- Commits store only file paths + hashes — not the full content
+- Same file content across 100 commits = stored **once**
+- Duplicate files across branches = stored **once**
 
 ## Branch System
 
