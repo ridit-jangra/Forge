@@ -1,7 +1,5 @@
 # Forge
 
-Git, but yours.
-
 Forge is a lightweight version control system built from scratch. Designed to be simple and easy to understand — Forge gives you the core of a VCS without the complexity of Git.
 
 ## Installation
