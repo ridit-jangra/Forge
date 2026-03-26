@@ -79,7 +79,10 @@ export function createBranch(
       );
     }
   } catch (err) {
-    return { status: "error", error: err as string };
+    return {
+      status: "error",
+      error: `error while creating branch: ${String(err)}.`,
+    };
   }
 
   return { status: "ok" };
